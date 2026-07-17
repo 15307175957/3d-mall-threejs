@@ -207,7 +207,7 @@ import { MallViewer } from '3d-mall-viewer';
 const viewer = new MallViewer({
   container: document.querySelector('#mall'),  // 任意已挂载的 DOM 容器
   data: myMallJson,                            // 布局数据（floors 数组）；缺省为空白商场
-  editable: true,                              // true=编辑模式；false=仅浏览（不创建编辑面板交互）
+  editable: false,                             // 默认预览/仅浏览；true 才进入编辑模式（演示页显式传 true）
   onSave: (data) => api.post('/mall', data),   // 保存回调（可选）；不传则回退到 /api/save-mall
   onUploadImage: (file) => uploadImage(file),  // 图片上传回调（可选）；不传则回退到 /api/upload-image
 });

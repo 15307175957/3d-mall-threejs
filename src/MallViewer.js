@@ -144,14 +144,14 @@ export class MallViewer {
    * @param {Object} opts
    * @param {HTMLElement} opts.container   挂载容器（会在此创建 Shadow DOM）
    * @param {Object} [opts.data]           布局数据（含 floors 数组），缺省为空商场
-   * @param {boolean} [opts.editable=true] 是否启用编辑能力（false 仅浏览）
+   * @param {boolean} [opts.editable=false] 是否启用编辑能力（默认预览/仅浏览；true 才进入编辑模式）
    * @param {Function} [opts.onSave]       保存回调 (data) => void | Promise；缺省回退到 /api/save-mall
    * @param {Function} [opts.onUploadImage] 图片上传回调 (file) => Promise<string 路径>
    * @param {string} [opts.saveUrl]         dev 兼容：保存接口地址
    * @param {string} [opts.uploadUrl]       dev 兼容：上传接口地址
    */
   constructor(opts = {}) {
-    const { container, data, editable = true, onSave, onUploadImage, saveUrl, uploadUrl } = opts;
+    const { container, data, editable = false, onSave, onUploadImage, saveUrl, uploadUrl } = opts;
     if (!container) throw new Error('MallViewer: container 参数必填');
 
     this.container = container;
