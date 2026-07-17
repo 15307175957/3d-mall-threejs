@@ -351,6 +351,8 @@ export class MallViewer {
     }
     (d.elevators || []).forEach((elevator) => {
       const mesh = createElevatorMesh(elevator);
+      mesh.userData.item = elevator;
+      mesh.userData.source = 'elevators';
       f.group.add(mesh);
       f.elevatorMeshes.push(mesh);
     });
