@@ -81,6 +81,11 @@ const APP_HTML = `
           <span>场地外边框</span>
         </div>
         <div class="floor-upload">
+          <button type="button" id="edit-paste-svg" class="svg-code-btn" title="粘贴 SVG 代码" aria-label="粘贴 SVG 代码">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path fill="currentColor" d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+            </svg>
+          </button>
           <button type="button" id="edit-upload-svg">上传 SVG</button>
           <input type="file" id="editor-svg-file" accept=".svg,image/svg+xml" hidden>
         </div>
@@ -93,6 +98,11 @@ const APP_HTML = `
           <span>商铺外观</span>
         </div>
         <div class="floor-upload">
+          <button type="button" id="edit-paste-shop-svg" class="svg-code-btn" title="粘贴 SVG 代码" aria-label="粘贴 SVG 代码">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path fill="currentColor" d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>
+            </svg>
+          </button>
           <button type="button" id="edit-upload-shop-svg">上传 SVG</button>
           <input type="file" id="editor-shop-svg-file" accept=".svg,image/svg+xml" hidden>
         </div>
@@ -133,6 +143,16 @@ const APP_HTML = `
         <button id="edit-export">导出</button>
         <button id="edit-import">导入</button>
         <input type="file" id="editor-import-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div id="svg-paste-panel" class="svg-paste-panel hidden">
+      <div class="svg-paste-box">
+        <div class="svg-paste-title">粘贴 SVG 代码</div>
+        <textarea id="svg-paste-input" placeholder="将 SVG 代码粘贴到这里，例如：&#10;<svg viewBox=&quot;0 0 100 100&quot;><path d=&quot;M0 0 L100 0 L100 100 Z&quot;/></svg>"></textarea>
+        <div class="svg-paste-actions">
+          <button type="button" id="svg-paste-cancel">取消</button>
+          <button type="button" id="svg-paste-ok">确定</button>
+        </div>
       </div>
     </div>
     <div id="tooltip"></div>
@@ -268,6 +288,13 @@ export class MallViewer {
     this.editorShopSvg = $('editor-shop-svg');
     this.editUploadShopSvg = $('edit-upload-shop-svg');
     this.editorShopSvgFile = $('editor-shop-svg-file');
+    this.editPasteSvg = $('edit-paste-svg');
+    this.editPasteShopSvg = $('edit-paste-shop-svg');
+    this.svgPastePanel = $('svg-paste-panel');
+    this.svgPasteInput = $('svg-paste-input');
+    this.svgPasteOk = $('svg-paste-ok');
+    this.svgPasteCancel = $('svg-paste-cancel');
+    this.svgPasteKind = null;
     this.editorRowFloorSize = $('editor-row-floor-size');
     this.editorRowGeoSize = $('editor-row-geo-size');
     this.editLen = $('edit-len');
@@ -1526,41 +1553,7 @@ export class MallViewer {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const raw = parseSvgOutline(reader.result);
-      if (!raw || raw.length < 3) {
-        this.showStatus('SVG 未解析出有效轮廓（支持 path/polygon/polyline/rect/circle/ellipse）', false);
-        return;
-      }
-      const b = this.getFenceBounds();
-      if (!b) { this.showStatus('当前场地无外轮廓', false); return; }
-      const xs = raw.map((p) => p[0]);
-      const ys = raw.map((p) => p[1]);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-      const w = maxX - minX || 1;
-      const h = maxY - minY || 1;
-      const targetW = b.maxX - b.minX;
-      const targetH = b.maxY - b.minY;
-      const cx = (b.minX + b.maxX) / 2;
-      const cy = (b.minY + b.maxY) / 2;
-      const scale = Math.min(targetW / w, targetH / h);
-      const out = raw.map(([px, py]) => {
-        const nx = (px - (minX + maxX) / 2) * scale;
-        const ny = -(py - (minY + maxY) / 2) * scale;
-        return [Math.round(cx + nx), Math.round(cy + ny)];
-      });
-      this.cur().data.outline = out;
-      this.rebuildFloor();
-      if (this.selectedType === 'floor') {
-        const nb = this.getFenceBounds();
-        if (nb) {
-          if (this.editW) this.editW.value = Math.round(nb.maxX - nb.minX);
-          if (this.editH) this.editH.value = Math.round(nb.maxY - nb.minY);
-        }
-      }
-      this.showStatus('已按 SVG 生成场地外边框', true);
-    };
+    reader.onload = () => this.applyFloorSvgOutline(parseSvgOutline(reader.result));
     reader.onerror = () => this.showStatus('读取 SVG 文件失败', false);
     reader.readAsText(file);
     e.target.value = '';
@@ -1569,34 +1562,101 @@ export class MallViewer {
   onShopSvgChange(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    if (!this.selectedShop || this.selectedType !== 'shop') return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const raw = parseSvgOutline(reader.result);
-      if (!raw || raw.length < 3) {
-        this.showStatus('SVG 未解析出有效轮廓（支持 path/polygon/polyline/rect/circle/ellipse）', false);
-        return;
-      }
-      const xs = raw.map((p) => p[0]);
-      const ys = raw.map((p) => p[1]);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-      const w = maxX - minX || 1;
-      const h = maxY - minY || 1;
-      const scale = Math.min(this.selectedShop.width / w, this.selectedShop.height / h);
-      const shape = raw.map(([px, py]) => {
-        const nx = (px - (minX + maxX) / 2) * scale;
-        const ny = -(py - (minY + maxY) / 2) * scale;
-        return [Math.round(nx), Math.round(ny)];
-      });
-      this.selectedShop.shape = shape;
-      if (this.hoveredMesh === this.selectedMesh) this.restoreHovered();
-      this.rebuildSelectedMesh();
-      this.showStatus('已按 SVG 改变商铺外观', true);
-    };
+    reader.onload = () => this.applyShopSvgOutline(parseSvgOutline(reader.result));
     reader.onerror = () => this.showStatus('读取 SVG 文件失败', false);
     reader.readAsText(file);
     e.target.value = '';
+  }
+
+  // 解析后的 SVG 轮廓点应用到场地外边框（文件上传与粘贴代码共用）
+  applyFloorSvgOutline(raw) {
+    if (!raw || raw.length < 3) {
+      this.showStatus('SVG 未解析出有效轮廓（支持 path/polygon/polyline/rect/circle/ellipse）', false);
+      return false;
+    }
+    const b = this.getFenceBounds();
+    if (!b) { this.showStatus('当前场地无外轮廓', false); return false; }
+    const xs = raw.map((p) => p[0]);
+    const ys = raw.map((p) => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = maxX - minX || 1;
+    const h = maxY - minY || 1;
+    const targetW = b.maxX - b.minX;
+    const targetH = b.maxY - b.minY;
+    const cx = (b.minX + b.maxX) / 2;
+    const cy = (b.minY + b.maxY) / 2;
+    const scale = Math.min(targetW / w, targetH / h);
+    const out = raw.map(([px, py]) => {
+      const nx = (px - (minX + maxX) / 2) * scale;
+      const ny = -(py - (minY + maxY) / 2) * scale;
+      return [Math.round(cx + nx), Math.round(cy + ny)];
+    });
+    this.cur().data.outline = out;
+    this.rebuildFloor();
+    if (this.selectedType === 'floor') {
+      const nb = this.getFenceBounds();
+      if (nb) {
+        if (this.editW) this.editW.value = Math.round(nb.maxX - nb.minX);
+        if (this.editH) this.editH.value = Math.round(nb.maxY - nb.minY);
+      }
+    }
+    this.showStatus('已按 SVG 生成场地外边框', true);
+    return true;
+  }
+
+  // 解析后的 SVG 轮廓点应用到商铺外观（文件上传与粘贴代码共用）
+  applyShopSvgOutline(raw) {
+    if (!this.selectedShop || this.selectedType !== 'shop') {
+      this.showStatus('请先选中一个商铺', false);
+      return false;
+    }
+    if (!raw || raw.length < 3) {
+      this.showStatus('SVG 未解析出有效轮廓（支持 path/polygon/polyline/rect/circle/ellipse）', false);
+      return false;
+    }
+    const xs = raw.map((p) => p[0]);
+    const ys = raw.map((p) => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const w = maxX - minX || 1;
+    const h = maxY - minY || 1;
+    const scale = Math.min(this.selectedShop.width / w, this.selectedShop.height / h);
+    const shape = raw.map(([px, py]) => {
+      const nx = (px - (minX + maxX) / 2) * scale;
+      const ny = -(py - (minY + maxY) / 2) * scale;
+      return [Math.round(nx), Math.round(ny)];
+    });
+    this.selectedShop.shape = shape;
+    if (this.hoveredMesh === this.selectedMesh) this.restoreHovered();
+    this.rebuildSelectedMesh();
+    this.showStatus('已按 SVG 改变商铺外观', true);
+    return true;
+  }
+
+  // 打开 SVG 代码粘贴面板（kind: 'floor' 场地外边框 / 'shop' 商铺外观）
+  openSvgPaste(kind) {
+    if (!this.editable) return;
+    this.svgPasteKind = kind;
+    if (this.svgPasteInput) this.svgPasteInput.value = '';
+    if (this.svgPastePanel) this.svgPastePanel.classList.remove('hidden');
+    if (this.svgPasteInput) setTimeout(() => this.svgPasteInput.focus(), 0);
+  }
+
+  closeSvgPaste() {
+    if (this.svgPastePanel) this.svgPastePanel.classList.add('hidden');
+    this.svgPasteKind = null;
+  }
+
+  onSvgPasteConfirm() {
+    const text = ((this.svgPasteInput && this.svgPasteInput.value) || '').trim();
+    if (!text) { this.showStatus('请粘贴 SVG 代码', false); return; }
+    const raw = parseSvgOutline(text);
+    const ok = this.svgPasteKind === 'shop'
+      ? this.applyShopSvgOutline(raw)
+      : this.applyFloorSvgOutline(raw);
+    if (ok) this.closeSvgPaste();
   }
 
   // ============ 事件绑定 ============
@@ -1653,9 +1713,15 @@ export class MallViewer {
 
     if (this.editUploadSvg) this.editUploadSvg.addEventListener('click', () => this.editorSvgFile && this.editorSvgFile.click());
     if (this.editorSvgFile) this.editorSvgFile.addEventListener('change', (e) => this.onSvgFileChange(e));
+    if (this.editPasteSvg) this.editPasteSvg.addEventListener('click', () => this.openSvgPaste('floor'));
 
     if (this.editUploadShopSvg) this.editUploadShopSvg.addEventListener('click', () => this.editorShopSvgFile && this.editorShopSvgFile.click());
     if (this.editorShopSvgFile) this.editorShopSvgFile.addEventListener('change', (e) => this.onShopSvgChange(e));
+    if (this.editPasteShopSvg) this.editPasteShopSvg.addEventListener('click', () => this.openSvgPaste('shop'));
+
+    if (this.svgPasteOk) this.svgPasteOk.addEventListener('click', () => this.onSvgPasteConfirm());
+    if (this.svgPasteCancel) this.svgPasteCancel.addEventListener('click', () => this.closeSvgPaste());
+    if (this.svgPastePanel) this.svgPastePanel.addEventListener('click', (e) => { if (e.target === this.svgPastePanel) this.closeSvgPaste(); });
 
     if (this.editCategory) {
       this.editCategory.innerHTML =

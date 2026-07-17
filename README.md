@@ -268,4 +268,4 @@ npm run build:lib   # 产出 dist/mall-viewer.js（ESM）
 
 ## 许可
 
-内部项目，仅供数据治理相关演示与编辑使用。
+FHZ内部项目，仅供数据治理相关演示与编辑使用。

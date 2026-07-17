@@ -414,7 +414,29 @@ body {
 .floor-upload {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
   flex: 1 1 auto;
+}
+
+/* 粘贴 SVG 代码图标按钮（位于“上传 SVG”左侧） */
+.svg-code-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: rgba(45, 120, 200, 0.85);
+  border: 1px solid rgba(110, 180, 240, 0.8);
+  color: #fff;
+  transition: background 0.2s ease;
+}
+.svg-code-btn:hover {
+  background: rgba(50, 140, 220, 1);
+}
+.svg-code-btn svg {
+  display: block;
 }
 
 #edit-upload-svg,
@@ -431,6 +453,70 @@ body {
 
 #edit-upload-svg:hover,
 #edit-upload-shop-svg:hover {
+  background: rgba(50, 140, 220, 1);
+}
+
+/* 粘贴 SVG 代码面板（覆盖在查看器之上的模态层） */
+.svg-paste-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 50;
+}
+.svg-paste-panel.hidden {
+  display: none;
+}
+.svg-paste-box {
+  width: 340px;
+  max-width: 90%;
+  background: #16263a;
+  border: 1px solid rgba(110, 180, 240, 0.6);
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+.svg-paste-title {
+  font-size: 13px;
+  color: #6ecbff;
+  margin-bottom: 8px;
+}
+#svg-paste-input {
+  width: 100%;
+  height: 150px;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+}
+#svg-paste-input:focus {
+  border-color: rgba(0, 160, 255, 0.9);
+}
+.svg-paste-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+.svg-paste-actions button {
+  padding: 5px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  border: 1px solid rgba(110, 180, 240, 0.8);
+  color: #fff;
+  background: rgba(45, 120, 200, 0.85);
+}
+.svg-paste-actions button:hover {
   background: rgba(50, 140, 220, 1);
 }
 
