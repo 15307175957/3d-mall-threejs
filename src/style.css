@@ -12,8 +12,9 @@ body {
 }
 
 /* 自适应居中背景图：铺满视口、居中、等比覆盖 */
+/* 注意：组件以 Shadow DOM 隔离，背景由 :host 渐变提供，不在此引用 PNG，
+   以免被 ?inline 以 base64 打进库产物造成体积膨胀。演示页仍可用 body 渐变背景。 */
 .body-bg {
-  background-image: url('/src/images/bodyBg.png');
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;

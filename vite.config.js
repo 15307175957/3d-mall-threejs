@@ -76,5 +76,9 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173
+  },
+  // 演示页构建输出到独立目录，避免覆盖库构建产物 dist/mall-viewer.js
+  build: {
+    outDir: 'dist-demo'
   }
 });

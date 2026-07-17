@@ -1,15 +1,30 @@
 {
-  "name": "3d-demo-threejs",
+  "name": "3d-mall-viewer",
   "version": "1.0.0",
-  "private": true,
+  "description": "基于 three.js 的三维商场布局查看器（框架无关，Shadow DOM 隔离）",
   "type": "module",
+  "main": "dist/mall-viewer.js",
+  "module": "dist/mall-viewer.js",
+  "exports": {
+    ".": {
+      "import": "./dist/mall-viewer.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:lib": "vite build --config vite.lib.config.js",
     "preview": "vite preview"
   },
   "dependencies": {
     "three": "^0.160.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.150.0"
   },
   "devDependencies": {
     "vite": "^5.0.0"

@@ -20,12 +20,14 @@
 
 ```
 3D_Demo_threeJS/
-├── index.html              # 页面骨架与参数编辑面板 UI
+├── index.html              # 演示页骨架（仅一个容器 div，UI 由 MallViewer 在 Shadow DOM 内创建）
 ├── start.bat              # 一键启动脚本（安装依赖→杀旧进程→起 Vite→开浏览器）
-├── vite.config.js         # Vite 配置 + 两个开发期中间件（保存/上传）
+├── vite.config.js         # Vite 配置 + 两个开发期中间件（保存/上传）；演示页构建输出 dist-demo/
+├── vite.lib.config.js     # 库构建配置（产出可 import 的 ESM：dist/mall-viewer.js）
 ├── package.json
 ├── src/
-│   ├── main.js            # 核心逻辑：场景装配、交互、编辑、保存
+│   ├── MallViewer.js      # 核心类：自包含查看器（Shadow DOM + 内部 UI + 数据/保存解耦）
+│   ├── main.js            # 演示入口：实例化 MallViewer 并传入 mall.json
 │   ├── style.css          # 全局样式（面板、按钮、锁图标等）
 │   ├── core/
 │   │   └── SceneManager.js        # 场景/相机/灯光/OrbitControls/渲染循环
@@ -74,8 +76,9 @@ npm run dev      # 启动开发服务器（http://localhost:5173）
 ### 构建生产包
 
 ```bash
-npm run build    # 输出到 dist/
-npm run preview  # 预览构建产物
+npm run build      # 构建演示页，输出到 dist-demo/
+npm run build:lib  # 构建可复用库，输出到 dist/mall-viewer.js（ESM，three 为外部依赖）
+npm run preview    # 预览演示页构建产物
 ```
 
 ---
@@ -174,17 +177,72 @@ npx serve dist          # 或 python -m http.server 指向 dist
 }
 ```
 
-> **兼容说明**：旧版单层结构（顶层直接是 `floor`/`outline`/`shops` 等）会在 `main.js` 启动时自动迁移为 `floors` 数组，无需手工转换。
+> **兼容说明**：旧版单层结构（顶层直接是 `floor`/`outline`/`shops` 等）会在 `MallViewer` 初始化时自动迁移为 `floors` 数组，无需手工转换。
 > 注意原始楼层数据 `outline`/`elevators` 等字段直接挂在楼层对象顶层（无 `.data` 包裹），`.data` 仅用于运行时包装对象。
 
 ---
 
 ## 架构概览
 
-- **场景装配**：`main.js` 读取 `mallData`，为每层创建一个 `THREE.Group`，沿 Y 轴以 `FLOOR_GAP = 30` 堆叠；每层内由 `buildFloor()` 装配外轮廓、围栏、电梯、店铺、标识。
+- **场景装配**：`MallViewer` 读取注入的 `data`，为每层创建一个 `THREE.Group`，沿 Y 轴以 `FLOOR_GAP = 30` 堆叠；每层内由 `buildFloor()` 装配外轮廓、围栏、电梯、店铺、标识。
 - **渲染**：`SceneManager` 负责 `WebGLRenderer`（开启阴影、`ACESFilmicToneMapping`）、`PerspectiveCamera`、`OrbitControls`（带阻尼）、多光源（环境光 + 半球光 + 主方向光投射阴影 + 补光）与窗口自适应。
 - **交互**：`Raycaster` 做鼠标拾取；`mousemove` 做 hover 高亮 + tooltip；`click` 选中；`dblclick` 空白处取消选中。
 - **编辑**：面板输入实时回写选中对象并重建对应网格，同时做碰撞检测。
+
+---
+
+## 作为模块使用（MallViewer）
+
+`MallViewer` 是一个**框架无关、自包含**的查看器类：所有 UI（模式切换、楼层面板、参数面板、tooltip）都在 **Shadow DOM** 内动态创建，样式与宿主页面隔离；布局数据从外部注入，保存/上传通过回调解耦。工程方只需 `import` 并提供一个容器。
+
+### 安装与引入
+
+```bash
+npm i 3d-mall-viewer three   # three 为 peerDependency，需自行安装
+```
+
+```js
+import { MallViewer } from '3d-mall-viewer';
+
+const viewer = new MallViewer({
+  container: document.querySelector('#mall'),  // 任意已挂载的 DOM 容器
+  data: myMallJson,                            // 布局数据（floors 数组）；缺省为空白商场
+  editable: true,                              // true=编辑模式；false=仅浏览（不创建编辑面板交互）
+  onSave: (data) => api.post('/mall', data),   // 保存回调（可选）；不传则回退到 /api/save-mall
+  onUploadImage: (file) => uploadImage(file),  // 图片上传回调（可选）；不传则回退到 /api/upload-image
+});
+```
+
+> 容器只需有尺寸（如 `width:100%;height:100%`），组件会自动铺满并创建 Shadow DOM。
+
+### 对外 API
+
+| 方法 | 说明 |
+| --- | --- |
+| `loadData(data)` | 热替换布局数据并重建场景 |
+| `getData()` | 取当前布局（深拷贝，外部修改不影响内部） |
+| `exportJSON()` | 导出含各对象 `shape` 的 JSON 字符串 |
+| `setEditMode(bool)` | 切换编辑 / 浏览模式 |
+| `getSceneManager()` | 获取底层 `SceneManager`（高级用法） |
+| `destroy()` | 卸载：移除事件、释放 WebGL 资源、清空 DOM |
+
+### 数据解耦
+
+- 布局数据通过 `data` 注入，不再写死 `mall.json`；旧版单层结构会在内部自动迁移为 `floors` 数组。
+- 保存不再硬依赖 Vite 中间件：传入 `onSave(data)` 回调即可对接任意后端；不传时回退到开发期 `/api/save-mall`（仅 `npm run dev` 可用）。
+- 图片上传同理：`onUploadImage(file)` 返回可访问路径即可；不传时回退到 `/api/upload-image`。
+
+### 样式隔离
+
+组件所有样式通过 Shadow DOM 注入，使用 `:host` 提供背景渐变，不会污染宿主页面的全局样式。
+
+### 构建库产物
+
+```bash
+npm run build:lib   # 产出 dist/mall-viewer.js（ESM）
+```
+
+产物中 `three` 已被外部化（`peerDependencies`），由使用方安装，不会重复打包。
 
 ---
 
