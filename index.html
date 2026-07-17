@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>三维商城布局图</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body class="body-bg">
+  <div id="app">
+    <div id="mode-switch">
+      <span class="mode-label">模式</span>
+      <div class="checkbox-button-group" id="mode-group">
+        <button type="button" class="mode-btn active" data-mode="edit">编辑</button>
+        <button type="button" class="mode-btn" data-mode="browse">预览</button>
+      </div>
+    </div>
+    <div id="floor-panel">
+      <span id="floor-label">当前聚焦楼层: 3F</span>
+      <div id="floor-buttons"></div>
+      <div class="floor-actions">
+        <button id="overview-toggle" type="button">总览</button>
+        <button id="floor-add" type="button">＋ 楼层</button>
+        <button id="floor-del" type="button">－ 删除</button>
+      </div>
+    </div>
+    <div id="editor-panel">
+      <div class="editor-title">参数详情</div>
+      <div class="editor-head">
+        <span class="editor-head-label">编辑对象：</span>
+        <span id="editor-shop-name">—</span>
+      </div>
+      <label class="editor-name-label">名称
+        <input type="text" id="edit-name" placeholder="对象名称">
+      </label>
+      <label class="editor-category-label">类型
+        <select id="edit-category"></select>
+      </label>
+      <div id="editor-brand" class="editor-brand hidden">
+        <div class="brand-head">
+          <svg class="brand-icon" viewBox="0 0 1024 1024" width="14" height="14" aria-hidden="true">
+            <path fill="currentColor" d="M896 128H128a64 64 0 0 0-64 64v640a64 64 0 0 0 64 64h768a64 64 0 0 0 64-64V192a64 64 0 0 0-64-64z m0 704H128V192h768v640zM352 448a64 64 0 1 0 0-128 64 64 0 0 0 0 128z m448 256H224l160-192 112 128 176-224 128 288z"/>
+          </svg>
+          <span>品牌图</span>
+        </div>
+        <img id="editor-brand-img" src="" alt="品牌图">
+        <label class="brand-path-label">图片路径
+          <input type="text" id="editor-brand-path" placeholder="如 /src/images/xxx.png">
+        </label>
+        <div class="brand-upload">
+          <button type="button" id="editor-brand-upload">上传图片</button>
+          <input type="file" id="editor-brand-file" accept="image/*" hidden>
+        </div>
+        <label class="brand-toggle-label">
+          <span>显示图片（关闭则显示名称）</span>
+          <span class="switch">
+            <input type="checkbox" id="editor-show-image">
+            <span class="slider"></span>
+          </span>
+        </label>
+      </div>
+      <div id="editor-floor" class="editor-floor hidden">
+        <label class="floor-id-label">楼层编号
+          <input type="number" id="edit-floor-id" step="1" min="1">
+        </label>
+        <div class="floor-head">
+          <svg class="floor-icon" viewBox="0 0 1024 1024" width="14" height="14" aria-hidden="true">
+            <path fill="currentColor" d="M128 128h768v768H128z m64 64v640h640V192H192z m96 96h192v192H288v-192z m256 0h192v448H544V288z m-256 256h192v192H288v-192z"/>
+          </svg>
+          <span>场地外边框</span>
+        </div>
+        <div class="floor-upload">
+          <button type="button" id="edit-upload-svg">上传 SVG</button>
+          <input type="file" id="editor-svg-file" accept=".svg,image/svg+xml" hidden>
+        </div>
+      </div>
+      <div id="editor-shop-svg" class="editor-floor hidden">
+        <div class="floor-head">
+          <svg class="floor-icon" viewBox="0 0 1024 1024" width="14" height="14" aria-hidden="true">
+            <path fill="currentColor" d="M128 128h768v768H128z m64 64v640h640V192H192z m96 96h192v192H288v-192z m256 0h192v448H544V288z m-256 256h192v192H288v-192z"/>
+          </svg>
+          <span>商铺外观</span>
+        </div>
+        <div class="floor-upload">
+          <button type="button" id="edit-upload-shop-svg">上传 SVG</button>
+          <input type="file" id="editor-shop-svg-file" accept=".svg,image/svg+xml" hidden>
+        </div>
+      </div>
+      <div class="editor-row" id="editor-row-xy">
+        <label>X 坐标<input type="number" id="edit-x" step="1"></label>
+        <label>Y 坐标<input type="number" id="edit-y" step="1"></label>
+      </div>
+      <div class="editor-row" id="editor-row-floor-size">
+        <label>宽<input type="number" id="edit-w" step="1" min="1"></label>
+        <label>高<input type="number" id="edit-h" step="1" min="1"></label>
+        <button type="button" id="lock-floor-ratio" class="ratio-lock" title="锁定长宽比" aria-pressed="false" aria-label="锁定长宽比">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path class="lock-shackle" d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"></rect>
+          </svg>
+        </button>
+      </div>
+      <div class="editor-row" id="editor-row-geo-size">
+        <label>长<input type="number" id="edit-len" step="1" min="1"></label>
+        <label>宽<input type="number" id="edit-wide" step="1" min="1"></label>
+        <label>高<input type="number" id="edit-high" step="1" min="1"></label>
+        <button type="button" id="lock-geo-ratio" class="ratio-lock" title="锁定长宽比" aria-pressed="false" aria-label="锁定长宽比">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+            <path class="lock-shackle" d="M8 10V7a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+            <rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"></rect>
+          </svg>
+        </button>
+      </div>
+      <div id="editor-warning" class="editor-warning hidden"></div>
+      <div id="editor-status" class="editor-status hidden"></div>
+      <div class="editor-actions">
+        <button id="edit-add">新增</button>
+        <button id="edit-apply">应用</button>
+        <button id="edit-save">保存</button>
+        <button id="edit-reset">重置</button>
+        <button id="edit-delete">删除</button>
+        <button id="edit-export">导出</button>
+        <button id="edit-import">导入</button>
+        <input type="file" id="editor-import-file" accept=".json,application/json" hidden>
+      </div>
+    </div>
+    <div id="tooltip"></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

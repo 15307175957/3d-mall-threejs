@@ -1,0 +1,712 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  overflow: hidden;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: radial-gradient(circle at 50% 45%, #0d2f55 0%, #061427 45%, #03060d 100%);
+  color: #fff;
+}
+
+/* 自适应居中背景图：铺满视口、居中、等比覆盖 */
+.body-bg {
+  background-image: url('/src/images/bodyBg.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#floor-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+  background: rgba(10, 20, 40, 0.85);
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+#floor-panel span {
+  font-size: 14px;
+  color: #a8d8ff;
+}
+
+#floor-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.floor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#floor-panel button {
+  position: relative;
+  background: rgba(30, 60, 100, 0.6);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  color: #d0ecff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+#floor-panel button:hover {
+  background: rgba(50, 110, 180, 0.8);
+}
+
+#floor-panel button.active {
+  background: rgba(0, 140, 255, 0.85);
+  border-color: rgba(120, 200, 255, 0.8);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0, 140, 255, 0.5);
+}
+
+/* 楼层编辑激活（场地被选中）时，在对应楼层按钮右上角用 ::after 绘制绿色小圆圈 */
+#floor-panel button.floor-edit::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2ee66e;
+  box-shadow: 0 0 6px rgba(46, 230, 110, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* 顶部居中：编辑 / 浏览 模式切换 */
+#mode-switch {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  background: rgba(10, 20, 40, 0.85);
+  border: 1px solid rgba(100, 180, 255, 0.35);
+  border-radius: 8px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  font-size: 14px;
+  color: #a8d8ff;
+  user-select: none;
+}
+
+#mode-switch .mode-label {
+  color: #a8d8ff;
+}
+
+/* el-checkbox-button 风格：编辑 / 浏览 按钮组 */
+.checkbox-button-group {
+  display: inline-flex;
+  border: 1px solid rgba(100, 180, 255, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(100, 180, 255, 0.5);
+  color: #a8d8ff;
+  padding: 6px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mode-btn:last-child {
+  border-right: none;
+}
+
+.mode-btn:hover:not(.active) {
+  background: rgba(50, 110, 180, 0.6);
+  color: #d0ecff;
+}
+
+.mode-btn.active {
+  background: rgba(0, 140, 255, 0.85);
+  color: #fff;
+  box-shadow: inset 0 0 8px rgba(0, 170, 255, 0.55);
+  font-weight: bold;
+}
+
+/* 浏览模式下被禁用的按钮：变灰且不可点击 */
+#floor-panel button:disabled,
+.editor-actions button:disabled,
+#editor-brand-upload:disabled,
+#edit-upload-svg:disabled,
+#edit-upload-shop-svg:disabled,
+.editor-category-label select:disabled,
+.editor-name-label input:disabled,
+.editor-row input:disabled,
+.brand-path-label input:disabled,
+.switch input:disabled + .slider {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+#tooltip {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  white-space: nowrap;
+}
+
+#tooltip.visible {
+  opacity: 1;
+}
+
+/* 悬浮编辑面板 */
+#editor-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 15;
+  width: 280px;
+  background: rgba(10, 20, 40, 0.92);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  transition: opacity 0.2s ease;
+}
+
+#editor-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editor-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #fff;
+  text-align: left;
+  padding: 6px 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(100, 180, 255, 0.35);
+  letter-spacing: 2px;
+}
+
+.editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6ecbff;
+  margin-bottom: 12px;
+}
+
+.editor-head-label {
+  color: #6ecbff;
+}
+
+.editor-head span {
+  color: #fff;
+}
+
+.editor-name-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #8fb8d8;
+  margin-bottom: 12px;
+}
+
+.editor-name-label input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+}
+
+.editor-name-label input:focus {
+  border-color: rgba(0, 160, 255, 0.9);
+}
+
+.editor-category-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #8fb8d8;
+  margin-bottom: 12px;
+}
+
+.editor-category-label select {
+  flex: 1;
+  width: auto;
+  box-sizing: border-box;
+  padding: 6px;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 去掉浏览器默认的聚焦焦点环（绿/蓝点状虚线轮廓） */
+.editor-category-label select:focus,
+.editor-category-label select:focus-visible,
+.editor-category-label select:-moz-focusring {
+  outline: none;
+  box-shadow: none;
+  border-color: rgba(0, 160, 255, 0.9);
+}
+
+/* 自定义类型下拉展开项：深蓝 90% 透明背景 */
+.editor-category-label select option {
+  background: rgba(10, 20, 40, 0.9);
+  color: #fff;
+}
+
+.editor-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+}
+
+.brand-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6ecbff;
+}
+
+.brand-head .brand-icon {
+  color: #6ecbff;
+  flex: 0 0 auto;
+}
+
+.editor-brand img {
+  align-self: center;
+  max-width: 100%;
+  max-height: 70px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.brand-upload {
+  display: flex;
+  justify-content: flex-end;
+}
+
+#editor-brand-upload {
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  background: rgba(45, 120, 200, 0.85);
+  border: 1px solid rgba(110, 180, 240, 0.8);
+  color: #fff;
+  transition: background 0.2s ease;
+}
+
+#editor-brand-upload:hover {
+  background: rgba(50, 140, 220, 1);
+}
+
+/* 场地外边框 SVG 上传区（标题与按钮同一行） */
+.editor-floor {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 6px;
+}
+
+/* 场地参数：楼层编号（设置该层对应楼层，映射地图层位置）—— 占满第一行 */
+.floor-id-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #8fb8d8;
+  flex: 0 0 100%;
+}
+
+.floor-id-label input {
+  width: 70px;
+  box-sizing: border-box;
+  padding: 5px 6px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+}
+
+.floor-id-label input:focus {
+  border-color: rgba(0, 160, 255, 0.9);
+}
+
+.floor-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6ecbff;
+  flex: 0 0 auto;
+}
+
+.floor-head .floor-icon {
+  color: #6ecbff;
+  flex: 0 0 auto;
+}
+
+.floor-upload {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+}
+
+#edit-upload-svg,
+#edit-upload-shop-svg {
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  background: rgba(45, 120, 200, 0.85);
+  border: 1px solid rgba(110, 180, 240, 0.8);
+  color: #fff;
+  transition: background 0.2s ease;
+}
+
+#edit-upload-svg:hover,
+#edit-upload-shop-svg:hover {
+  background: rgba(50, 140, 220, 1);
+}
+
+/* 场地/标识等对象选中时隐藏品牌图相关区域（依赖 .hidden 类） */
+#editor-brand.hidden,
+.editor-floor.hidden {
+  display: none;
+}
+
+.brand-path-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #8fb8d8;
+}
+
+.brand-path-label input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 6px;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: 4px;
+  outline: none;
+}
+
+.brand-path-label input:focus {
+  border-color: rgba(0, 160, 255, 0.9);
+}
+
+.brand-toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font-size: 11px;
+  color: #8fb8d8;
+}
+
+/* 滑动开关 */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(120, 120, 130, 0.7);
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.switch .slider::before {
+  content: '';
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.switch input:checked + .slider {
+  background: rgba(0, 160, 255, 0.9);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+.editor-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.editor-row label {
+  flex: 1;
+  font-size: 12px;
+  color: #a8d8ff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-row input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.editor-row input:focus {
+  outline: none;
+  border-color: rgba(120, 200, 255, 0.85);
+}
+
+/* 长宽比锁按钮：默认灰暗（未锁），点亮后为绿色（已锁定） */
+.ratio-lock {
+  align-self: flex-end;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  border-radius: 4px;
+  color: #8aa0b4;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  padding: 0;
+}
+
+.ratio-lock:hover {
+  border-color: rgba(120, 200, 255, 0.7);
+  color: #cfe6ff;
+}
+
+/* 已锁定（点亮）：绿色高亮 + 发光 */
+.ratio-lock.active {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.85);
+  background: rgba(34, 197, 94, 0.16);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
+}
+
+/* 未锁定时锁扣开口，锁定时闭合 */
+.ratio-lock .lock-shackle {
+  transform-origin: center;
+  transition: transform 0.18s ease;
+}
+.ratio-lock:not(.active) .lock-shackle {
+  transform: translateX(3px) rotate(12deg);
+}
+
+#edit-apply {
+  width: 100%;
+  background: rgba(0, 140, 255, 0.85);
+  border: 1px solid rgba(120, 200, 255, 0.8);
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+#edit-apply:hover {
+  background: rgba(0, 160, 255, 1);
+}
+
+#editor-warning.hidden,
+#editor-status.hidden {
+  display: none;
+}
+
+.editor-warning {
+  font-size: 12px;
+  color: #ffb3b3;
+  background: rgba(120, 20, 20, 0.35);
+  border: 1px solid rgba(255, 90, 90, 0.5);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.editor-status {
+  font-size: 12px;
+  color: #b6ffb6;
+  background: rgba(20, 90, 40, 0.35);
+  border: 1px solid rgba(90, 220, 120, 0.5);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.editor-status.error {
+  color: #ffb3b3;
+  background: rgba(120, 20, 20, 0.35);
+  border-color: rgba(255, 90, 90, 0.5);
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editor-actions button {
+  flex: 1 1 calc(33.333% - 6px);
+  padding: 8px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+#edit-add {
+  background: rgba(45, 120, 200, 0.85);
+  border: 1px solid rgba(110, 180, 240, 0.8);
+  color: #fff;
+}
+
+#edit-add:hover {
+  background: rgba(50, 140, 220, 1);
+}
+
+#edit-save {
+  background: rgba(40, 160, 90, 0.85);
+  border: 1px solid rgba(120, 220, 150, 0.8);
+  color: #fff;
+}
+
+#edit-save:hover {
+  background: rgba(40, 190, 100, 1);
+}
+
+#edit-reset {
+  background: rgba(120, 120, 130, 0.85);
+  border: 1px solid rgba(180, 180, 190, 0.8);
+  color: #fff;
+}
+
+#edit-reset:hover {
+  background: rgba(140, 140, 150, 1);
+}
+
+#edit-delete {
+  background: rgba(170, 50, 50, 0.85);
+  border: 1px solid rgba(220, 110, 110, 0.8);
+  color: #fff;
+}
+
+#edit-delete:hover {
+  background: rgba(200, 60, 60, 1);
+}
+
+#edit-export {
+  background: rgba(0, 150, 160, 0.85);
+  border: 1px solid rgba(90, 210, 220, 0.8);
+  color: #fff;
+}
+
+#edit-export:hover {
+  background: rgba(0, 170, 180, 1);
+}
+
+#edit-import {
+  background: rgba(110, 90, 190, 0.85);
+  border: 1px solid rgba(170, 150, 240, 0.8);
+  color: #fff;
+}
+
+#edit-import:hover {
+  background: rgba(130, 105, 215, 1);
+}
