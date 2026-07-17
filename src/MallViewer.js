@@ -155,6 +155,7 @@ const APP_HTML = `
         </div>
       </div>
     </div>
+    <div id="message-toast" class="message-toast"></div>
     <div id="tooltip"></div>
   </div>
 `;
@@ -267,6 +268,7 @@ export class MallViewer {
     this.editAdd = $('edit-add');
     this.editApply = $('edit-apply');
     this.editSave = $('edit-save');
+    this.messageToast = $('message-toast');
     this.editReset = $('edit-reset');
     this.editDelete = $('edit-delete');
     this.editorWarning = $('editor-warning');
@@ -480,6 +482,17 @@ export class MallViewer {
     this.editorStatus.textContent = msg;
     this.editorStatus.classList.toggle('error', !ok);
     this.editorStatus.classList.remove('hidden');
+  }
+
+  // 弹出 Message 消息提示（不影响地图区域，仅作轻量通知）
+  showMessage(msg, ok = true) {
+    const el = this.messageToast;
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('error', !ok);
+    el.classList.add('show');
+    clearTimeout(this._msgTimer);
+    this._msgTimer = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
   // ============ 指针事件 ============
@@ -849,9 +862,9 @@ export class MallViewer {
       if (typeof this.onSave === 'function') {
         const res = await this.onSave(this.mallData);
         if (res && res.ok === false) {
-          this.showStatus('保存失败：' + (res.error || '未知错误'), false);
+          this.showMessage('保存失败：' + (res.error || '未知错误'), false);
         } else {
-          this.showStatus('已保存 ✓', true);
+          this.showMessage('已保存 ✓', true);
         }
         return;
       }
@@ -861,10 +874,10 @@ export class MallViewer {
         body: JSON.stringify(this.mallData)
       });
       const json = await res.json().catch(() => ({}));
-      if (res.ok && json.ok) this.showStatus('已保存到 mall.json ✓', true);
-      else this.showStatus('保存失败：' + (json.error || res.status), false);
+      if (res.ok && json.ok) this.showMessage('已保存到 mall.json ✓', true);
+      else this.showMessage('保存失败：' + (json.error || res.status), false);
     } catch (e) {
-      this.showStatus('保存失败：' + e.message, false);
+      this.showMessage('保存失败：' + e.message, false);
     }
   }
 

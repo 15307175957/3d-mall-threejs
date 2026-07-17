@@ -193,6 +193,34 @@ body {
   opacity: 1;
 }
 
+/* Message 消息提示（保存后弹出，不影响地图区域） */
+.message-toast {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  z-index: 60;
+  pointer-events: none;
+  max-width: 80%;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(40, 170, 110, 0.95);
+  border: 1px solid rgba(120, 230, 170, 0.8);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.message-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.message-toast.error {
+  background: rgba(200, 70, 70, 0.95);
+  border-color: rgba(240, 140, 140, 0.8);
+}
+
 /* 悬浮编辑面板 */
 #editor-panel {
   position: absolute;
