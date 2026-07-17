@@ -170,9 +170,10 @@ export class MallViewer {
    * @param {Function} [opts.onUploadImage] 图片上传回调 (file) => Promise<string 路径>
    * @param {string} [opts.saveUrl]         dev 兼容：保存接口地址
    * @param {string} [opts.uploadUrl]       dev 兼容：上传接口地址
+   * @param {string} [opts.backgroundImage] 背景图地址（如 '/src/images/bodyBg.png'）；传入则以等比覆盖方式作为场景背景，缺省沿用 :host 径向渐变
    */
   constructor(opts = {}) {
-    const { container, data, editable = false, onSave, onUploadImage, saveUrl, uploadUrl } = opts;
+    const { container, data, editable = false, onSave, onUploadImage, saveUrl, uploadUrl, backgroundImage } = opts;
     if (!container) throw new Error('MallViewer: container 参数必填');
 
     this.container = container;
@@ -181,6 +182,7 @@ export class MallViewer {
     this.onUploadImage = onUploadImage;
     this.saveUrl = saveUrl || '/api/save-mall';
     this.uploadUrl = uploadUrl || '/api/upload-image';
+    this.backgroundImage = backgroundImage || null;
 
     // 数据（深拷贝，避免外部引用被内部修改）
     this.mallData = this.normalizeData(data || { floors: [] });
@@ -1761,6 +1763,30 @@ export class MallViewer {
     this.focusCameraOnCurrentFloor();
     this.activateFloorEditor();
     if (!this.editable) this.setMode(false);
+    this.setBackgroundImage(this.backgroundImage);
+  }
+
+  // ============ 背景图（可配置接口） ============
+  /**
+   * 设置/更换场景背景图。传入 URL 后以「等比覆盖」方式作为背景（渲染在透明画布之后）；
+   * 传入 null / '' / undefined 则清除背景图，回退到 :host 径向渐变。
+   * @param {string|null} url
+   */
+  setBackgroundImage(url) {
+    this.backgroundImage = url || null;
+    const el = this.app;
+    if (!el) return;
+    if (this.backgroundImage) {
+      el.style.backgroundImage = `url("${this.backgroundImage}")`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center center';
+      el.style.backgroundRepeat = 'no-repeat';
+    } else {
+      el.style.backgroundImage = '';
+      el.style.backgroundSize = '';
+      el.style.backgroundPosition = '';
+      el.style.backgroundRepeat = '';
+    }
   }
 
   _startAnimation() {

@@ -208,9 +208,13 @@ const viewer = new MallViewer({
   container: document.querySelector('#mall'),  // 任意已挂载的 DOM 容器
   data: myMallJson,                            // 布局数据（floors 数组）；缺省为空白商场
   editable: false,                             // 默认预览/仅浏览；true 才进入编辑模式（演示页显式传 true）
+  backgroundImage: '/images/bodyBg.png',        // 背景图（可选）：以等比覆盖方式作为场景背景；不传则沿用默认径向渐变
   onSave: (data) => api.post('/mall', data),   // 保存回调（可选）；不传则回退到 /api/save-mall
   onUploadImage: (file) => uploadImage(file),  // 图片上传回调（可选）；不传则回退到 /api/upload-image
 });
+
+// 运行时也可热更换背景图（传 null 清除，回退到渐变）
+viewer.setBackgroundImage('/images/bodyBg.png');
 ```
 
 > 容器只需有尺寸（如 `width:100%;height:100%`），组件会自动铺满并创建 Shadow DOM。
@@ -223,6 +227,7 @@ const viewer = new MallViewer({
 | `getData()` | 取当前布局（深拷贝，外部修改不影响内部） |
 | `exportJSON()` | 导出含各对象 `shape` 的 JSON 字符串 |
 | `setEditMode(bool)` | 切换编辑 / 浏览模式 |
+| `setBackgroundImage(url)` | 设置 / 更换场景背景图（`null` 清除，回退到渐变） |
 | `getSceneManager()` | 获取底层 `SceneManager`（高级用法） |
 | `destroy()` | 卸载：移除事件、释放 WebGL 资源、清空 DOM |
 
