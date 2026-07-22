@@ -1,6 +1,6 @@
-# 三维商城布局图（3D Mall Layout）
+# 三维场景运维布局图（3D Mall Layout）
 
-基于 **Three.js** 的可视化三维商城布局编辑器。支持多层商场（楼层沿 Y 轴堆叠）、店铺/电梯/出入口/卫生间等要素的参数化编辑、SVG 外轮廓导入、品牌图上传，以及将布局数据保存回本地 JSON。
+基于 **Three.js** 的可视化三维场景布局编辑器。支持多层场景（楼层沿 Y 轴堆叠）、店铺/电梯/出入口/卫生间等要素的参数化编辑、SVG 外轮廓导入、品牌图上传，以及将布局数据保存回本地 JSON。
 
 ---
 
@@ -46,7 +46,7 @@
 │   │   ├── svgOutline.js          # SVG 路径解析 → 顶点轮廓
 │   │   └── LogoTexture.js         # 文字/Logo 纹理生成
 │   ├── data/
-│   │   └── mall.json              # 商城布局数据源（运行时被读写）
+│   │   └── mall.json              # 场景布局数据源（运行时被读写）
 │   └── images/                    # 上传/内置图片资源
 └── dist/                   # `npm run build` 产物
 ```
@@ -206,7 +206,7 @@ import { MallViewer } from '3d-mall-viewer';
 
 const viewer = new MallViewer({
   container: document.querySelector('#mall'),  // 任意已挂载的 DOM 容器
-  data: myMallJson,                            // 布局数据（floors 数组）；缺省为空白商场
+  data: myMallJson,                            // 布局数据（floors 数组）；缺省为空白场景
   editable: false,                             // 默认预览/仅浏览；true 才进入编辑模式（演示页显式传 true）
   backgroundImage: '/images/bodyBg.png',        // 背景图（可选）：以等比覆盖方式作为场景背景；不传则沿用默认径向渐变
   onSave: (data) => api.post('/mall', data),   // 保存回调（可选）；不传则回退到 /api/save-mall
